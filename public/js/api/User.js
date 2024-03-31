@@ -4,72 +4,74 @@
  * Имеет свойство URL, равное '/user'.
  * */
 class User {
-  static url = '/user';
-  //console.log (this.URL);
+  static URL = '/user'; // Адрес для работы с пользователями
+
   /**
    * Устанавливает текущего пользователя в
    * локальном хранилище.
-   * */
+   * @param {Object} user - Данные пользователя.
+   */
   static setCurrent(user) {
-    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.user = JSON.stringify(user);
   }
 
   /**
    * Удаляет информацию об авторизованном
    * пользователе из локального хранилища.
-   * */
+   */
   static unsetCurrent() {
-    localStorage.removeItem('user');
+    delete localStorage.user;
   }
 
   /**
    * Возвращает текущего авторизованного пользователя
-   * из локального хранилища
-   * */
+   * из локального хранилища.
+   * @returns {Object|undefined} - Данные текущего пользователя.
+   */
   static current() {
-    return localStorage.getItem('user');
+    try {
+      return JSON.parse(localStorage.user);
+    } catch (e) {
+      return undefined;
+    }
   }
 
   /**
    * Получает информацию о текущем
    * авторизованном пользователе.
-   * */
+   * @param {Function} callback - Callback-функция для обработки результата.
+   */
   static fetch(callback) {
     createRequest({
-      url: this.url + '/current',
+      url: this.URL + '/current',
       method: 'GET',
-      callback: ((err, response) => {
-        if (response.saccess) {
+      responseType: 'json',
+      callback: (err, response) => {
+        if (response.success && response.user) {
           this.setCurrent(response.user);
-        } else {
-          this.unsetCurrent(response.user);
-          console.log(err);
         }
-        //response.saccess ? this.setCurrent(response.user) : this.unsetCurrent(response.user);
         callback(err, response);
       }
-      )
     });
-
-  };
+  }
 
   /**
    * Производит попытку авторизации.
    * После успешной авторизации необходимо
    * сохранить пользователя через метод
    * User.setCurrent.
-   * */
+   * @param {Object} data - Данные для авторизации (email, password).
+   * @param {Function} callback - Callback-функция для обработки результата.
+   */
   static login(data, callback) {
     createRequest({
-      url: this.url + '/login',
+      url: this.URL + '/login',
       method: 'POST',
       responseType: 'json',
       data,
       callback: (err, response) => {
-        if (response.success) {
+        if (response.success && response.user) {
           this.setCurrent(response.user);
-        } else {
-          console.log(err);
         }
         callback(err, response);
       }
@@ -78,21 +80,21 @@ class User {
 
   /**
    * Производит попытку регистрации пользователя.
-   * После успешной авторизации необходимо
+   * После успешной регистрации необходимо
    * сохранить пользователя через метод
    * User.setCurrent.
-   * */
+   * @param {Object} data - Данные для регистрации (name, email, password).
+   * @param {Function} callback - Callback-функция для обработки результата.
+   */
   static register(data, callback) {
     createRequest({
-      url: this.url + '/register',
+      url: this.URL + '/register',
       method: 'POST',
       responseType: 'json',
       data,
       callback: (err, response) => {
-        if (response.success) {
+        if (response.success && response.user) {
           this.setCurrent(response.user);
-        } else {
-          console.log(err);
         }
         callback(err, response);
       }
@@ -100,22 +102,21 @@ class User {
   }
 
   /**
-   * Производит выход из приложения. После успешного
-   * выхода необходимо вызвать метод User.unsetCurrent
-   * */
+   * Производит выход из приложения.
+   * После успешного выхода вызывает метод User.unsetCurrent.
+   * @param {Function} callback - Callback-функция для обработки результата.
+   */
   static logout(callback) {
     createRequest({
-      url: this.url + '/logout',
+      url: this.URL + '/logout',
       method: 'POST',
       responseType: 'json',
       callback: (err, response) => {
         if (response.success) {
-          this.unsetCurrent(response.user);
-        } else {
-          console.log(err);
+          this.unsetCurrent();
         }
         callback(err, response);
       }
-    })
+    });
   }
 }

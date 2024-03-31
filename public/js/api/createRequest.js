@@ -2,36 +2,35 @@
  * Основная функция для совершения запросов
  * на сервер.
  * */
-const createRequest = (options) => {
+const createRequest = (options = {}) => {
     const xhr = new XMLHttpRequest();
-    xhr.responseType = 'json';
-    const url = options.url;
-    const formData = new FormData();
-
-    xhr.addEventListener('load', () => {
-        const response = xhr.response;
-        const err = response.error;
-        if (response.success) {
-            options.callback(err, response);
-        } else {
-            console.log(err);
-        }
-    });
-    if (this.method === 'GET') {
-        for (let item in options.data) {
-            url += item + '=' + options.data[item];
-        }
+  
+    xhr.open(options.method, options.url);
+  
+    if (options.method === "GET") {
+      const params = new URLSearchParams(options.data);
+      xhr.open(options.method, `${options.url}?${params}`);
     } else {
-        console.log(777, options.data)
-        for (let property in options.data) {
-            formData.append(property, options.data[property]);
-        }
+      const formData = new FormData();
+      for (const key in options.data) {
+        formData.append(key, options.data[key]);
+      }
+      xhr.send(formData);
     }
-    try {
-        xhr.open(options.method, url);
-        xhr.send(formData);
-    }
-    catch (error) {
-        console.log(error);
-    }
-};
+  
+    xhr.responseType = "json";
+  
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        options.callback(null, xhr.response);
+      } else {
+        options.callback({ status: xhr.status, message: xhr.statusText }, null);
+      }
+    };
+  
+    xhr.onerror = () => {
+      options.callback({ status: xhr.status, message: xhr.statusText }, null);
+    };
+  
+    xhr.send();
+  };
